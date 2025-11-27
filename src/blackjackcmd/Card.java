@@ -7,7 +7,7 @@ public class Card {
 	}
 	
 	public enum Suit {
-		SPADE, HEART, CLUB, DIAMOND
+		SPADES, HEARTS, CLUBS, DIAMONDS
 	}
 	
 	private Rank rank;

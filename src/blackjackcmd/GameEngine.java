@@ -1,106 +1,120 @@
 package blackjackcmd;
 
-import java.util.Scanner;
 
 public class GameEngine {
+	
+	public enum GameState {
+		NOT_STARTED,
+		PLAYER_TURN,
+		DEALER_TURN,
+		ROUND_OVER
+	}
+	
+	public enum Outcome {
+		NONE,
+		PLAYER_WIN,
+		DEALER_WIN,
+		PUSH
+	}
+	
 	private final Deck deck = new Deck();
 	private final Hand playerHand = new Hand();
 	private final Hand dealerHand = new Hand();
 	
-	private final Scanner scanner = new Scanner(System.in);
+	private GameState state = GameState.NOT_STARTED;
+	private Outcome outcome = Outcome.NONE;
+	private boolean hideDealerHoleCard = true;
 	
 	public void start() {
-		System.out.println("Blackjack");
-		
-		while(true) {
-			playRound();
-			System.out.println("Play again? (y/n)");
-			String choice = scanner.nextLine().trim().toLowerCase();
-			if(!choice.equals("y")) {
-				System.out.println("Thanks for playing");
-				break;
-			}
-		}
-	}
-	
-	private void playRound() {
 		deck.generateNewDeck();
 		playerHand.clear();
 		dealerHand.clear();
+		outcome = Outcome.NONE;
 		
 		playerHand.addCard(deck.draw());
 		playerHand.addCard(deck.draw());
 		dealerHand.addCard(deck.draw());
 		dealerHand.addCard(deck.draw());
 		
-		System.out.println("Dealer shows: " + dealerHand.getCards().get(0));
-		System.out.println("Your hand: " + playerHand);
+		hideDealerHoleCard = true;
 		
-		if(playerHand.hasBlackjack()) {
-			System.out.println("Blackjack! You won");
-			return;
+		if (playerHand.hasBlackjack()) {
+			hideDealerHoleCard = false;
+			state = GameState.ROUND_OVER;
+			showResults();
+		} else {
+			state = GameState.PLAYER_TURN;
 		}
+	}
+	
+	public void playerHit() {
+		if (state != GameState.PLAYER_TURN) return;
 		
-		playerTurn();
-		if(playerHand.isBust()) {
-			System.out.println("You busted. Dealer wins.");
-			return;
+		playerHand.addCard(deck.draw());
+		if (playerHand.isBust()) {
+			state = GameState.ROUND_OVER;
+			showResults();
 		}
+	}
+	
+	public void playerStand() {
+		if (state != GameState.PLAYER_TURN) return;
 		
-		dealerTurn();
+		hideDealerHoleCard = true;
+		
+		state = GameState.DEALER_TURN;
+		dealerPlay();
+		state = GameState.ROUND_OVER;
 		showResults();
 	}
 	
-	private void playerTurn() {
-		while(true) {
-			System.out.println("\n(H)it or (S)tand");
-			String choice = scanner.nextLine().trim().toLowerCase();
-			
-			if(choice.startsWith("h")) {
-				playerHand.addCard(deck.draw());
-				System.out.println("You draw: " + playerHand.getCards().get(playerHand.getCards().size() - 1));
-				System.out.println("Your hand: " + playerHand);
-				
-				if(playerHand.isBust()) return;
-			} else if(choice.startsWith("s")) {
-				return;
-			} else {
-				System.out.println("Invalid option");
-			}
+	private void dealerPlay() {
+		while (dealerHand.getValue() < 17) {
+			dealerHand.addCard(deck.draw());
 		}
 	}
 	
-	private void dealerTurn() {
-		System.out.println("\n Dealers turn: ");
-		System.out.println("Dealer hand: " + dealerHand);
-		
-		while(dealerHand.getValue() < 17) {
-			Card drawn = deck.draw();
-			dealerHand.addCard(drawn);
-			System.out.println("Dealer draws: " + drawn + " | New hand: " + dealerHand);
-		}
-	}
+	
 	
 	private void showResults() {
+		hideDealerHoleCard = false;
 		int playerValue = playerHand.getValue();
 		int dealerValue = dealerHand.getValue();
 		
-		System.out.println("\n=== Final Hands ====");
-		System.out.println("Dealer: " + dealerHand);
-		System.out.println("Player: " + playerHand);
+		boolean playerBust = playerHand.isBust();
+		boolean dealerBust = dealerHand.isBust();
 		
-		if(dealerHand.isBust()) {
-			System.out.println("\nDealer busts! You win!");
+		
+		if(playerBust && dealerBust) {
+			outcome = Outcome.PUSH; // both bust, tie
+		} else if (playerBust) {
+			outcome = Outcome.DEALER_WIN;
+		} else if (dealerBust) {
+			outcome = Outcome.PLAYER_WIN;
 		} else if (playerValue > dealerValue) {
-			System.out.println("\nYou win!");
+			outcome = Outcome.PLAYER_WIN;
 		} else if (playerValue < dealerValue) {
-			System.out.println("\nDealer wins.");
+			outcome = Outcome.DEALER_WIN;
 		} else {
-			System.out.println("\nPush (tie)");
+			outcome = Outcome.PUSH;
 		}
 	}
+	public boolean isDealerHoleCardHidden() {
+		return hideDealerHoleCard;
+	}
 	
-	
-	
+	public Hand getPlayerHand() {
+		return playerHand;
+	}
+	public Hand getDealerHand() {
+		return dealerHand;
+	}
+	public GameState getGameState() {
+		return state;
+	}
+	public Outcome getOutcome() {
+		return outcome;
+	}
+
 	
 }

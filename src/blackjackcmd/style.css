@@ -1,0 +1,84 @@
+.root {
+    -fx-background-image: url("table.jpg");
+    -fx-background-size: cover;
+    -fx-background-repeat: no-repeat;
+    -fx-background-position: center;
+}
+
+.big-button {
+    -fx-padding: 8px 20px;
+
+    /* Classic gray background */
+    -fx-background-color:
+        #C0C0C0,        /* base */
+        #DFDFDF,        /* highlight */
+        #808080;        /* shadow */
+
+    /* Insets define the 3D border layering */
+    -fx-background-insets: 0, 1, 2;
+
+    -fx-background-radius: 0;
+
+    /* Classic font */
+    -fx-font-family: "MS Sans Serif", "Tahoma", sans-serif;
+    -fx-font-size: 12px;
+
+    -fx-text-fill: black;
+}
+
+/* Hover - slight lightening (optional) */
+.big-button:hover {
+    -fx-background-color:
+        #D4D4D4,
+        #EFEFEF,
+        #808080;
+}
+
+/* Pressed (sunken) Windows 98 effect */
+.big-button:pressed {
+    -fx-background-color:
+        #808080,   /* dark outer border */
+        #DFDFDF,   /* inner highlight */
+        #C0C0C0;   /* base (inverted layering) */
+
+    -fx-background-insets: 0, 1, 2;
+    -fx-translate-x: 1;  /* classic “pressed” offset */
+    -fx-translate-y: 1;
+}
+
+.win-label {
+    -fx-font-family: "Impact", "Arial Black", sans-serif;
+    -fx-font-size: 20px;
+    -fx-text-fill: linear-gradient(#ffd867, #e3a82f, #b07a15);
+
+	-fx-background-color:
+	        #26452e,        /* base */
+	        #26452e,        /* highlight */
+	        #26452e;        /* shadow */
+
+	    /* Insets define the 3D border layering */
+	    -fx-background-insets: 0, 1, 2;
+
+	    -fx-background-radius: 0;
+		
+    -fx-effect: dropshadow(gaussian, rgba(255, 215, 0, 0.9), 12, 0.6, 0, 0);
+
+    -fx-padding: 6px 12px;
+}
+
+.status-label {
+    -fx-font-family: "Segoe UI", "Arial Black", sans-serif;
+    -fx-font-size: 26px;
+    -fx-font-weight: bold;
+
+    -fx-text-fill: #ffffff;
+
+    /* outer neon glow */
+    -fx-effect: dropshadow(gaussian, #1ecbff, 25, 0.8, 0, 0),
+                 dropshadow(gaussian, rgba(0, 150, 255, 0.6), 40, 0.7, 0, 0);
+
+    -fx-padding: 10px 15px;
+    -fx-alignment: center;
+}
+
+
