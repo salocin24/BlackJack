@@ -15,6 +15,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -28,6 +29,11 @@ public class Main extends Application{
 	private Label dealerValueLabel;
 	private Label playerValueLabel;
 	private Label statusLabel;
+	private Label dealerWinLabel;
+	private Label playerWinLabel;
+	
+	private int playerWins = 0;
+	private int dealerWins = 0;
 	
 	private Button dealButton;
 	private Button hitButton;
@@ -38,7 +44,6 @@ public class Main extends Application{
 	
 	private int previousPlayerCardCount = 0;
 	private int previousDealerCardCount = 0;
-	private ImageView deckImageView;
 	
 	public void start(Stage primaryStage) {
 		engine = new GameEngine();
@@ -46,35 +51,54 @@ public class Main extends Application{
 		BorderPane root = new BorderPane();
 		root.setPadding(new Insets(15));
 		
+		// top bar for win representation
+		HBox topBar = new HBox(20);
+		topBar.setPadding(new Insets(10));
+		topBar.setAlignment(Pos.CENTER_LEFT);
 		
-		// deck image in center left
-		Image deckImage = new Image(getClass().getResourceAsStream("cards/back.png"));
-		deckImageView = new ImageView(deckImage);
-		deckImageView.setFitWidth(100);
-		deckImageView.setPreserveRatio(true);
-		deckImageView.setOpacity(0.9);
+		// win labels (left side - dealer at top, player at bottom)
+		dealerWinLabel = new Label("Dealer Wins: 0");
+		dealerWinLabel.getStyleClass().add("win-label");
+		playerWinLabel = new Label("Player Wins: 0");
+		playerWinLabel.getStyleClass().add("win-label");
+		
+		topBar.getChildren().addAll(dealerWinLabel, playerWinLabel);
 		
 		// dealer area
-		VBox dealerArea = new VBox(5);
+		VBox dealerArea = new VBox(10);
 		Label dealerLabel = new Label("Dealer");
 		dealerCardsBox = new HBox(5);
+		dealerCardsBox.setMinHeight(150); // Reserve space for cards
+		dealerCardsBox.setAlignment(Pos.CENTER);
+		
 		dealerValueLabel = new Label("Value: 0");
+		
+		dealerArea.setAlignment(Pos.CENTER);
+		dealerArea.setPadding(new Insets(20, 0, 20, 0));
 		dealerArea.getChildren().addAll(dealerLabel, dealerCardsBox, dealerValueLabel);
 		
+		// combined top and dealerArea
+		VBox top = new VBox(10, topBar, dealerArea);
+		root.setTop(top);
+		
 		// player area
-		VBox playerArea = new VBox(5);
+		VBox playerArea = new VBox(10);
 		Label playerLabel = new Label("Player");
 		playerCardsBox = new HBox(5);
+		playerCardsBox.setMinHeight(150); // Reserve space for cards
+		playerCardsBox.setAlignment(Pos.CENTER);
 		playerValueLabel = new Label("Value: 0");
 		playerArea.setAlignment(Pos.CENTER);
+		playerArea.setPadding(new Insets(20, 0, 20, 0));
 		playerArea.getChildren().addAll(playerLabel, playerCardsBox, playerValueLabel);
 		
 		
 		
 		// game status
 		statusLabel = new Label("Click DEAL to start");
-		VBox centerBox = new VBox(statusLabel);
+		VBox centerBox = new VBox(20, statusLabel);
 		centerBox.setAlignment(Pos.CENTER);
+		centerBox.setPadding(new Insets(20, 0, 20, 0));
 		
 		HBox buttonBox = new HBox(10);
 		buttonBox.setAlignment(Pos.CENTER);
@@ -108,11 +132,8 @@ public class Main extends Application{
 		buttonBox.getChildren().addAll(dealButton, hitButton, standButton, playAgainButton);
 		
 		VBox bottom = new VBox(10, playerArea, buttonBox);
-		root.setTop(dealerArea);
 		root.setCenter(centerBox);
 		root.setBottom(bottom);
-		root.setLeft(deckImageView);
-		BorderPane.setMargin(deckImageView, new Insets(20));
 		
 		Scene scene = new Scene(root, 600, 800);
 		scene.getStylesheets().add(getClass().getResource("style.css").toExternalForm());
@@ -182,7 +203,7 @@ public class Main extends Application{
 		boolean doRevealAnimation = dealerHoleWasHidden && !currentlyHidden;
 		boolean holeCardStateChanged = (dealerHoleWasHidden != currentlyHidden);
 		
-		// Update dealer cards if count changed OR hole card visibility changed
+		// Only update dealer cards if count changed OR hole card visibility changed
 		if (dealerCards.size() != previousDealerCardCount || holeCardStateChanged) {
 			// Remove old cards and add all current cards
 			dealerCardsBox.getChildren().clear();
@@ -196,7 +217,7 @@ public class Main extends Application{
 					dealerCardsBox.getChildren().add(view);
 					// Only animate if this is a new card (not just a state change)
 					if (i >= previousDealerCardCount) {
-						animateCardFromDeck(view, true);
+						animateDealCard(view, true);
 					}
 				} else {
 					view = createCardImage(card);
@@ -207,7 +228,7 @@ public class Main extends Application{
 						holeViewForReveal = view;
 					} else if (i >= previousDealerCardCount) {
 						// Only animate new cards
-						animateCardFromDeck(view, true);
+						animateDealCard(view, true);
 					}
 				}
 			}
@@ -224,7 +245,7 @@ public class Main extends Application{
 				playerCardsBox.getChildren().add(view);
 				// Only animate if this is a new card
 				if (i >= previousPlayerCardCount) {
-					animateCardFromDeck(view, false);
+					animateDealCard(view, false);
 				}
 			}
 		}
@@ -245,48 +266,13 @@ public class Main extends Application{
 		dealerHoleWasHidden = currentlyHidden;
 	}
 	
-	private void animateCardFromDeck(ImageView view, boolean isDealer) {
-		// Force layout to get proper bounds
-		view.applyCss();
-		view.layout();
+	private void animateDealCard(ImageView view, boolean fromTop) {
+		double offsetY = fromTop ? -40 : 40;
+		view.setTranslateY(offsetY);
 		
-		// Use Platform.runLater to ensure layout is complete
-		javafx.application.Platform.runLater(() -> {
-			// Get deck position in scene coordinates
-			if (deckImageView.getScene() == null || view.getScene() == null) {
-				// Fallback: use simple animation if scene not ready
-				view.setTranslateX(-200);
-				view.setTranslateY(0);
-				TranslateTransition tt = new TranslateTransition(Duration.millis(500), view);
-				tt.setToX(0);
-				tt.setToY(0);
-				tt.play();
-				return;
-			}
-			
-			javafx.geometry.Bounds deckBounds = deckImageView.localToScene(deckImageView.getBoundsInLocal());
-			double deckCenterX = deckBounds.getMinX() + deckBounds.getWidth() / 2;
-			double deckCenterY = deckBounds.getMinY() + deckBounds.getHeight() / 2;
-			
-			// Get card's final position in scene coordinates
-			javafx.geometry.Bounds cardBounds = view.localToScene(view.getBoundsInLocal());
-			double cardCenterX = cardBounds.getMinX() + cardBounds.getWidth() / 2;
-			double cardCenterY = cardBounds.getMinY() + cardBounds.getHeight() / 2;
-			
-			// Calculate offset from deck to card
-			double offsetX = deckCenterX - cardCenterX;
-			double offsetY = deckCenterY - cardCenterY;
-			
-			// Set initial position (card appears at deck location)
-			view.setTranslateX(offsetX);
-			view.setTranslateY(offsetY);
-			
-			// Animate to final position (0, 0 relative to its container)
-			TranslateTransition tt = new TranslateTransition(Duration.millis(500), view);
-			tt.setToX(0);
-			tt.setToY(0);
-			tt.play();
-		});
+		TranslateTransition tt = new TranslateTransition(Duration.millis(400), view);
+		tt.setToY(0);
+		tt.play();
 	}
 	
 	private void animateReveal(ImageView view) {
@@ -308,9 +294,11 @@ public class Main extends Application{
 		switch(outcome) {
 			case PLAYER_WIN:
 				statusLabel.setText("You win!");
+				playerWins++;
 				break;
 			case DEALER_WIN:
 				statusLabel.setText("Dealer wins.");
+				dealerWins++;
 				break;
 			case PUSH:
 				statusLabel.setText("Push (tie).");
@@ -319,11 +307,18 @@ public class Main extends Application{
 				statusLabel.setText("Round over.");
 		}
 		
+		updateWinCountLabel();
+		
 		hitButton.setDisable(true);
 		standButton.setDisable(true);
 		dealButton.setDisable(true);
 		playAgainButton.setDisable(false);
 		
+	}
+	
+	private void updateWinCountLabel() {
+		dealerWinLabel.setText("Dealer Wins: " + dealerWins);
+		playerWinLabel.setText("Player Wins: " + playerWins);
 	}
 	
 	private ImageView createCardImage(Card card) {
@@ -336,7 +331,7 @@ public class Main extends Application{
 		Image image = new Image(getClass().getResourceAsStream(filename));
 		ImageView view = new ImageView(image);
 		
-		view.setFitWidth(80);
+		view.setFitWidth(110);
 		view.setPreserveRatio(true);
 		
 		return view;
@@ -345,7 +340,7 @@ public class Main extends Application{
 	private ImageView createBackCardImage() {
 		Image image = new Image(getClass().getResourceAsStream("cards/back.png"));
 		ImageView view = new ImageView(image);
-		view.setFitWidth(80);
+		view.setFitWidth(110);
 		view.setPreserveRatio(true);
 		return view;
 	}
